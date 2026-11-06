@@ -18,13 +18,17 @@ test('valeur des mains avec As', () => {
   assert.equal(handValue([c('A'), c('A'), c('9')]).total, 21);
 });
 
-test('blackjack naturel payé 3 pour 1', () => {
+test('blackjack naturel payé 3 pour 2', () => {
   const g = rigged(['A', '9', 'K', '7']);
   g.deal(10);
   assert.equal(g.phase, 'done');
   assert.equal(g.hands[0].result, 'blackjack');
-  assert.equal(g.lastRound.profit, 30);
-  assert.equal(g.balance, 1030);
+  assert.equal(g.lastRound.profit, 15);
+  assert.equal(g.balance, 1015);
+
+  const g2 = rigged(['A', '9', 'K', '7']);
+  g2.deal(5);
+  assert.equal(g2.lastRound.profit, 7.5);
 });
 
 test('blackjack contre blackjack = égalité', () => {

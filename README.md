@@ -5,7 +5,7 @@ Jeu de blackjack dans le navigateur, sans dépendance. Ouvrez `index.html` dans 
 ## Règles
 
 - Sabot de 6 jeux, remélangé quand il reste moins de 25 % des cartes.
-- **Blackjack naturel payé 3 pour 1** (mise de 10 € → 30 € de gain).
+- **Blackjack naturel payé 3 pour 2** (mise de 10 € → 15 € de gain).
 - Victoire normale payée 1 pour 1, égalité = mise rendue.
 - Le croupier tire jusqu'à 16 et reste sur tous les 17 (y compris 17 souple).
 - Si le croupier a un blackjack, la manche s'arrête tout de suite (il n'y a pas d'assurance).

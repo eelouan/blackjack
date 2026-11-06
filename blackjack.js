@@ -5,7 +5,7 @@
  *  - Sabot de 6 jeux, remélangé quand il reste moins de 25 % des cartes.
  *  - Le croupier reste sur tous les 17 (y compris 17 souple).
  *  - Le croupier vérifie s'il a un blackjack quand sa carte visible est un As ou une figure/10.
- *  - Blackjack naturel payé 3 pour 1.
+ *  - Blackjack naturel payé 3 pour 2.
  *  - Victoire normale payée 1 pour 1, égalité = mise rendue.
  *  - Doublement autorisé sur les deux premières cartes, Y COMPRIS après un split.
  *  - Split de deux cartes de même valeur, jusqu'à 4 mains.
@@ -17,7 +17,7 @@
   const SUITS = ['♠', '♥', '♦', '♣'];
   const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-  const BLACKJACK_PAYOUT = 3; // 3 pour 1
+  const BLACKJACK_PAYOUT = 1.5; // 3 pour 2
   const MAX_HANDS = 4;
 
   function cardValue(card) {
