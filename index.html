@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blackjack</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Blackjack</h1>
+    <p class="rules">Blackjack payé <strong>3 pour 1</strong> · Double après split · Le croupier reste sur 17 · Argent fictif</p>
+  </header>
+
+  <main class="layout">
+    <section class="table" aria-label="Table de jeu">
+      <div class="zone dealer-zone">
+        <div class="zone-label">Croupier <span id="dealer-total" class="total"></span></div>
+        <div id="dealer-cards" class="cards"></div>
+      </div>
+
+      <div id="message" class="message" role="status" aria-live="polite">Déposez de l'argent puis placez une mise.</div>
+
+      <div class="zone player-zone">
+        <div id="player-hands" class="hands"></div>
+      </div>
+
+      <div class="controls">
+        <div id="betting-controls" class="betting">
+          <div class="bet-display">Mise : <strong id="bet-amount">0 €</strong></div>
+          <div class="chips" id="chips">
+            <button class="chip c1" data-value="1">1</button>
+            <button class="chip c5" data-value="5">5</button>
+            <button class="chip c25" data-value="25">25</button>
+            <button class="chip c100" data-value="100">100</button>
+            <button class="chip c500" data-value="500">500</button>
+          </div>
+          <div class="row">
+            <button id="btn-clear" class="btn ghost">Effacer</button>
+            <button id="btn-max" class="btn ghost">Tapis</button>
+            <button id="btn-deal" class="btn primary">Distribuer</button>
+          </div>
+        </div>
+
+        <div id="action-controls" class="actions" hidden>
+          <button id="btn-hit" class="btn">Tirer</button>
+          <button id="btn-stand" class="btn">Rester</button>
+          <button id="btn-double" class="btn">Doubler</button>
+          <button id="btn-split" class="btn">Séparer</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="bank" aria-label="Banque">
+      <h2>Banque</h2>
+      <dl class="stats">
+        <div><dt>Solde</dt><dd id="stat-balance">0 €</dd></div>
+        <div><dt>Total déposé</dt><dd id="stat-deposited">0 €</dd></div>
+        <div><dt>Total récupéré</dt><dd id="stat-withdrawn">0 €</dd></div>
+        <div class="big"><dt>Bénéfice total</dt><dd id="stat-profit">0 €</dd></div>
+        <div><dt>Bénéfice dernière manche</dt><dd id="stat-last">—</dd></div>
+      </dl>
+
+      <form id="deposit-form" class="money-form">
+        <label for="deposit-input">Déposer</label>
+        <div class="row">
+          <input id="deposit-input" type="number" min="1" step="1" value="100" inputmode="decimal">
+          <button class="btn primary" type="submit">Déposer</button>
+        </div>
+      </form>
+
+      <form id="withdraw-form" class="money-form">
+        <label for="withdraw-input">Récupérer mes gains</label>
+        <div class="row">
+          <input id="withdraw-input" type="number" min="1" step="1" placeholder="Montant" inputmode="decimal">
+          <button class="btn" type="submit">Retirer</button>
+        </div>
+        <button id="btn-withdraw-all" class="btn ghost full" type="button">Tout récupérer</button>
+      </form>
+
+      <h3>Historique</h3>
+      <ol id="history" class="history"></ol>
+
+      <button id="btn-reset" class="btn ghost full danger" type="button">Tout réinitialiser</button>
+    </aside>
+  </main>
+
+  <script src="blackjack.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

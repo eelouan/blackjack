@@ -1,0 +1,9 @@
+{
+  "name": "blackjack",
+  "version": "1.0.0",
+  "description": "Jeu de blackjack avec argent fictif (blackjack payé 3 pour 1, double après split).",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
