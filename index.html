@@ -87,7 +87,6 @@ body {
   margin-right: -28px;
   flex-shrink: 0;
 }
-.card.new { animation: deal .25s ease-out both; }
 .card.red { color: var(--card-red); }
 .card .corner {
   position: absolute;
@@ -106,9 +105,117 @@ body {
     repeating-linear-gradient(45deg, #8b1e2d 0 6px, #a72a3b 6px 12px);
   border: 4px solid #fff;
 }
+/* Distribution : la carte part du sabot et glisse jusqu'à sa place */
+.card.deal-in { animation: deal .42s cubic-bezier(.2,.8,.25,1) both; }
 @keyframes deal {
-  from { transform: translateY(-30px) scale(.9); opacity: 0; }
-  to   { transform: none; opacity: 1; }
+  0%   { transform: translate(var(--dx, 0), var(--dy, -40px)) rotate(-25deg) scale(.7); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+/* Retournement de la carte cachée du croupier */
+.card.flip { animation: flip .4s ease-out both; }
+@keyframes flip {
+  0%   { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+/* Sabot */
+.shoe {
+  position: absolute;
+  top: 18px; right: 22px;
+  width: 64px; height: 90px;
+  pointer-events: none;
+}
+.shoe span {
+  position: absolute; inset: 0;
+  border-radius: 7px;
+  border: 3px solid #fff;
+  background: repeating-linear-gradient(45deg, #8b1e2d 0 6px, #a72a3b 6px 12px);
+  box-shadow: 0 2px 4px rgba(0,0,0,.4);
+}
+.shoe span:nth-child(1) { transform: translate(6px, 6px); }
+.shoe span:nth-child(2) { transform: translate(3px, 3px); }
+
+/* ---- Effets de fin de manche ---- */
+.hand { position: relative; }
+.hand .badge { visibility: hidden; }
+.hand.settled .badge { visibility: visible; }
+.hand.revealed .badge { animation: pop .45s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes pop {
+  0% { transform: scale(.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.hand.revealed.r-win { animation: glow-win 1.2s ease-out 2; border-color: var(--pos); }
+.hand.revealed.r-blackjack { animation: glow-bj 1s ease-out 3; border-color: var(--gold); }
+@keyframes glow-win {
+  0%   { box-shadow: 0 0 0 0 rgba(95,211,141,.7); }
+  100% { box-shadow: 0 0 0 22px rgba(95,211,141,0); }
+}
+@keyframes glow-bj {
+  0%   { box-shadow: 0 0 0 0 rgba(224,184,79,.9); }
+  100% { box-shadow: 0 0 0 30px rgba(224,184,79,0); }
+}
+.hand.revealed.r-win .card, .hand.revealed.r-blackjack .card { animation: hop .5s ease-out both; }
+@keyframes hop {
+  40% { transform: translateY(-12px); }
+  100% { transform: none; }
+}
+
+.hand.revealed.r-lose, .hand.revealed.r-bust { animation: shake .5s ease-in-out; }
+.hand.settled.r-lose .card, .hand.settled.r-bust .card {
+  filter: grayscale(.7) brightness(.75);
+  transition: filter .6s;
+}
+@keyframes shake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-9px) rotate(-1deg); }
+  40% { transform: translateX(8px) rotate(1deg); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(4px); }
+}
+.hand.revealed.r-push { animation: nudge .6s ease-out; }
+@keyframes nudge { 50% { transform: scale(1.03); } }
+
+.float-gain {
+  position: absolute;
+  left: 50%; top: 30%;
+  font-size: 1.6rem; font-weight: 800;
+  pointer-events: none;
+  text-shadow: 0 2px 6px rgba(0,0,0,.6);
+  animation: float-up 1.6s ease-out forwards;
+  white-space: nowrap;
+}
+.float-gain.pos { color: var(--pos); }
+.float-gain.neg { color: var(--neg); }
+@keyframes float-up {
+  0%   { transform: translate(-50%, 10px) scale(.6); opacity: 0; }
+  20%  { transform: translate(-50%, -10px) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -80px) scale(1); opacity: 0; }
+}
+
+.confetti {
+  position: absolute;
+  left: 50%; top: 40%;
+  width: 8px; height: 12px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: burst 1.3s cubic-bezier(.15,.7,.4,1) forwards;
+}
+@keyframes burst {
+  0%   { transform: translate(0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--x), var(--y)) rotate(var(--r)); opacity: 0; }
+}
+
+.table { position: relative; }
+.table.flash-win  { animation: flash-win .9s ease-out; }
+.table.flash-lose { animation: flash-lose .9s ease-out; }
+@keyframes flash-win  { 30% { box-shadow: inset 0 0 90px rgba(95,211,141,.55), 0 10px 30px rgba(0,0,0,.4); } }
+@keyframes flash-lose { 30% { box-shadow: inset 0 0 90px rgba(255,90,90,.5), 0 10px 30px rgba(0,0,0,.4); } }
+.message.pop { animation: pop .4s cubic-bezier(.3,1.6,.5,1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
 
 .message {
@@ -247,6 +354,7 @@ body {
   .card .pip { font-size: 1.7rem; }
   .cards { min-height: 90px; }
   .hand { padding-right: 28px; }
+  .shoe { width: 46px; height: 66px; top: 12px; right: 14px; }
 }
   </style>
 </head>
@@ -257,7 +365,8 @@ body {
   </header>
 
   <main class="layout">
-    <section class="table" aria-label="Table de jeu">
+    <section class="table" id="table" aria-label="Table de jeu">
+      <div class="shoe" id="shoe" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="zone dealer-zone">
         <div class="zone-label">Croupier <span id="dealer-total" class="total"></span></div>
         <div id="dealer-cards" class="cards"></div>
@@ -692,18 +801,28 @@ body {
   let shown = {};
   let fresh = {};
 
+  let incoming = []; // cartes à animer lors du prochain rendu
+  let busy = false; // vrai pendant l'animation de distribution
+  let resultsShown = false; // résultat de la manche déjà dévoilé
+  const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const DEAL_STEP = REDUCED ? 0 : 300; // ms entre deux cartes
+  const DEAL_TIME = REDUCED ? 0 : 420; // durée d'une carte
+
   function cardEl(card, hidden, zone, index) {
     const el = document.createElement('div');
     const key = hidden ? 'back' : card.rank + card.suit;
-    const isNew = (shown[zone] || [])[index] !== key;
+    const before = (shown[zone] || [])[index];
     (fresh[zone] = fresh[zone] || [])[index] = key;
-    const anim = isNew ? ' new' : '';
+    if (before !== key) {
+      // carte cachée qui se retourne, ou nouvelle carte qui arrive du sabot
+      incoming.push({ el, zone, index, flip: before === 'back' });
+    }
     if (hidden) {
-      el.className = 'card back' + anim;
+      el.className = 'card back';
       return el;
     }
     const red = card.suit === '♥' || card.suit === '♦';
-    el.className = 'card' + (red ? ' red' : '') + anim;
+    el.className = 'card' + (red ? ' red' : '');
     el.innerHTML =
       `<span class="corner">${card.rank}<br>${card.suit}</span>` +
       `<span class="pip">${card.suit}</span>` +
@@ -729,6 +848,7 @@ body {
     const playing = game.phase === 'player';
     const hideHole = playing;
     fresh = {};
+    incoming = [];
 
     // Croupier
     const dealerCards = $('dealer-cards');
@@ -746,8 +866,10 @@ body {
     game.hands.forEach((h, idx) => {
       const wrap = document.createElement('div');
       wrap.className = 'hand';
+      wrap.dataset.index = idx;
       if (playing && idx === game.active) wrap.classList.add('active');
       if (h.result) wrap.classList.add('r-' + h.result);
+      if (h.result && resultsShown) wrap.classList.add('settled');
 
       const cards = document.createElement('div');
       cards.className = 'cards';
@@ -774,22 +896,61 @@ body {
     });
 
     shown = fresh;
+    const animTime = animateIncoming();
 
-    // Contrôles
+    updateControls();
+    if (game.phase !== 'done' || !animTime) renderBank();
+    return animTime;
+  }
+
+  // Lance l'animation des nouvelles cartes, dans l'ordre réel de distribution
+  // (joueur, croupier, joueur, croupier…). Renvoie la durée totale en ms.
+  function animateIncoming() {
+    if (!incoming.length) return 0;
+    const zoneRank = (z) => (z === 'dealer' ? 99 : Number(z.slice(4)));
+    incoming.sort((a, b) => a.index - b.index || zoneRank(a.zone) - zoneRank(b.zone));
+    // la carte du croupier qui se retourne passe avant ses nouvelles cartes
+    incoming.sort((a, b) => (b.flip ? 1 : 0) - (a.flip ? 1 : 0));
+
+    const shoeRect = $('shoe').getBoundingClientRect();
+    incoming.forEach((c, i) => {
+      const r = c.el.getBoundingClientRect();
+      c.el.style.setProperty('--dx', shoeRect.left - r.left + 'px');
+      c.el.style.setProperty('--dy', shoeRect.top - r.top + 'px');
+      c.el.style.animationDelay = i * DEAL_STEP + 'ms';
+      c.el.classList.add(c.flip ? 'flip' : 'deal-in');
+    });
+    const total = (incoming.length - 1) * DEAL_STEP + DEAL_TIME;
+    incoming = [];
+    if (!total) return 0;
+
+    busy = true;
+    updateControls();
+    setTimeout(() => {
+      busy = false;
+      updateControls();
+    }, total);
+    return total;
+  }
+
+  function updateControls() {
+    const playing = game.phase === 'player';
     $('betting-controls').hidden = playing;
     $('action-controls').hidden = !playing;
     $('bet-amount').textContent = fmt(bet);
-    $('btn-deal').disabled = bet <= 0 || bet > game.balance;
-    $('btn-hit').disabled = !game.canHit();
-    $('btn-stand').disabled = !game.canStand();
-    $('btn-double').disabled = !game.canDouble();
-    $('btn-split').disabled = !game.canSplit();
+    $('btn-deal').disabled = busy || bet <= 0 || bet > game.balance;
+    $('btn-hit').disabled = busy || !game.canHit();
+    $('btn-stand').disabled = busy || !game.canStand();
+    $('btn-double').disabled = busy || !game.canDouble();
+    $('btn-split').disabled = busy || !game.canSplit();
     document.querySelectorAll('.chip').forEach((chip) => {
       chip.disabled = bet + Number(chip.dataset.value) > game.balance;
     });
-    $('withdraw-form').querySelectorAll('button, input').forEach((el) => (el.disabled = playing));
+    $('withdraw-form').querySelectorAll('button, input').forEach((el) => (el.disabled = playing || busy));
+  }
 
-    // Banque
+  function renderBank() {
+    const playing = game.phase === 'player';
     const inPlay = playing ? game.hands.reduce((s, h) => s + h.bet, 0) : 0;
     const profit = round(game.balance + inPlay + bank.withdrawn - bank.deposited);
     $('stat-balance').textContent = fmt(game.balance);
@@ -858,34 +1019,90 @@ body {
     if (game.phase === 'done' && game.lastRound) {
       const p = game.lastRound.profit;
       const results = game.hands.map((h) => RESULT_LABELS[h.result]).join(' · ');
-      const tone = p > 0 ? 'win' : p < 0 ? 'lose' : '';
-      message(`${results} — Bénéfice de la manche : ${signed(p)}`, tone);
       addHistory('round', results, p);
       bet = lastBet <= game.balance ? lastBet : 0;
       save();
-    } else if (game.phase === 'player') {
+      const wait = render();
+      if (wait) message(game.dealer.length > 2 ? 'Le croupier joue…' : game.hands.some((h) => h.result === 'bust') ? '' : 'Distribution…');
+      // le résultat n'apparaît qu'une fois toutes les cartes posées
+      setTimeout(() => {
+        const tone = p > 0 ? 'win' : p < 0 ? 'lose' : '';
+        message(`${results} — Bénéfice de la manche : ${signed(p)}`, tone);
+        const msg = $('message');
+        msg.classList.add('pop');
+        revealResults();
+        renderBank();
+      }, wait + (wait ? 150 : 0));
+      return;
+    }
+    if (game.phase === 'player') {
       const multi = game.hands.length > 1 ? ` (main ${game.active + 1}/${game.hands.length})` : '';
       message('À vous de jouer' + multi + '.' + blockedHint());
     }
     render();
   }
 
+  // Effets de victoire / défaite sur chaque main
+  function revealResults() {
+    resultsShown = true;
+    const table = $('table');
+    const p = game.lastRound.profit;
+    table.classList.remove('flash-win', 'flash-lose');
+    void table.offsetWidth; // relance l'animation
+    if (p > 0) table.classList.add('flash-win');
+    else if (p < 0) table.classList.add('flash-lose');
+
+    document.querySelectorAll('#player-hands .hand').forEach((wrap) => {
+      const h = game.hands[Number(wrap.dataset.index)];
+      if (!h) return;
+      wrap.classList.add('revealed', 'settled');
+      const gain = round(h.payout - h.bet);
+      const float = document.createElement('div');
+      float.className = 'float-gain ' + cls(gain);
+      float.textContent = signed(gain);
+      wrap.appendChild(float);
+      setTimeout(() => float.remove(), 1700);
+      if (!REDUCED && (h.result === 'blackjack' || h.result === 'win')) {
+        confetti(wrap, h.result === 'blackjack' ? 40 : 16);
+      }
+    });
+  }
+
+  function confetti(container, count) {
+    const colors = ['#e0b84f', '#5fd38d', '#ffffff', '#ff7a7a', '#6cb4ff'];
+    for (let i = 0; i < count; i++) {
+      const piece = document.createElement('span');
+      piece.className = 'confetti';
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 60 + Math.random() * 110;
+      piece.style.setProperty('--x', Math.cos(angle) * dist + 'px');
+      piece.style.setProperty('--y', Math.sin(angle) * dist - 40 + 'px');
+      piece.style.setProperty('--r', Math.random() * 720 - 360 + 'deg');
+      piece.style.background = colors[i % colors.length];
+      piece.style.animationDelay = Math.random() * 120 + 'ms';
+      container.appendChild(piece);
+      setTimeout(() => piece.remove(), 1500);
+    }
+  }
+
   // ---- Événements --------------------------------------------------------------
 
   $('chips').addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
-    if (!chip || game.phase === 'player') return;
+    if (!chip || busy || game.phase === 'player') return;
     const v = Number(chip.dataset.value);
     if (bet + v <= game.balance) bet = round(bet + v);
     render();
   });
 
   $('btn-clear').addEventListener('click', () => {
+    if (busy) return;
     bet = 0;
     render();
   });
 
   $('btn-max').addEventListener('click', () => {
+    if (busy) return;
     bet = game.balance;
     render();
   });
@@ -894,6 +1111,8 @@ body {
     try {
       lastBet = bet;
       game.deal(bet);
+      resultsShown = false;
+      shown = {}; // nouvelle manche : toutes les cartes sont distribuées depuis le sabot
       if (game.reshuffled) message('Sabot remélangé.');
       save();
       afterAction();
@@ -917,6 +1136,7 @@ body {
 
   $('deposit-form').addEventListener('submit', (e) => {
     e.preventDefault();
+    if (busy) return;
     const amount = round(Number($('deposit-input').value));
     try {
       game.deposit(amount);
@@ -957,7 +1177,7 @@ body {
   });
 
   $('btn-reset').addEventListener('click', () => {
-    if (game.phase === 'player') return;
+    if (busy || game.phase === 'player') return;
     if (!confirm('Remettre à zéro le solde, les totaux et l’historique ?')) return;
     game.balance = 0;
     game.lastRound = null;
