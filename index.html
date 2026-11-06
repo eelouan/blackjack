@@ -836,6 +836,22 @@ body {
     el.className = 'message' + (tone ? ' ' + tone : '');
   }
 
+  // Explique pourquoi « Séparer » ou « Doubler » est grisé alors que la main le permettrait.
+  function blockedHint() {
+    const h = game.currentHand;
+    if (!h || h.cards.length !== 2 || h.splitAces) return '';
+    const missing = round(h.bet - game.balance);
+    const pair = window.Blackjack.cardValue(h.cards[0]) === window.Blackjack.cardValue(h.cards[1]);
+    if (pair && game.hands.length >= window.Blackjack.MAX_HANDS) {
+      return ` Séparation impossible : ${window.Blackjack.MAX_HANDS} mains maximum.`;
+    }
+    if (missing > 0) {
+      const what = pair ? 'séparer ou doubler' : 'doubler';
+      return ` Solde insuffisant pour ${what} (il manque ${fmt(missing)}).`;
+    }
+    return '';
+  }
+
   // ---- Fin de manche ---------------------------------------------------------
 
   function afterAction() {
@@ -849,7 +865,7 @@ body {
       save();
     } else if (game.phase === 'player') {
       const multi = game.hands.length > 1 ? ` (main ${game.active + 1}/${game.hands.length})` : '';
-      message('À vous de jouer' + multi + '.');
+      message('À vous de jouer' + multi + '.' + blockedHint());
     }
     render();
   }
