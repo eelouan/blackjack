@@ -4,7 +4,251 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Blackjack</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+:root {
+  --felt: #0f5132;
+  --felt-dark: #0a3a24;
+  --bg: #0d1a14;
+  --panel: #14231c;
+  --panel-border: #24392f;
+  --text: #eef3ef;
+  --muted: #9fb3a8;
+  --gold: #e0b84f;
+  --pos: #5fd38d;
+  --neg: #ff7a7a;
+  --card: #fdfdfb;
+  --card-red: #c62828;
+  --card-black: #1b1b1b;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+.topbar {
+  padding: 16px 24px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+}
+.topbar h1 { margin: 0; font-size: 1.6rem; color: var(--gold); letter-spacing: .04em; }
+.rules { margin: 0; color: var(--muted); font-size: .9rem; }
+.rules strong { color: var(--gold); }
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  padding: 12px 24px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ---- Table ---- */
+.table {
+  background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
+  border: 10px solid #4a2d16;
+  border-radius: 28px;
+  padding: 20px;
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: inset 0 0 60px rgba(0,0,0,.45), 0 10px 30px rgba(0,0,0,.4);
+}
+
+.zone-label { font-weight: 600; margin-bottom: 8px; color: #dfeee5; }
+.total {
+  display: inline-block;
+  background: rgba(0,0,0,.35);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-variant-numeric: tabular-nums;
+}
+.total:empty { display: none; }
+
+.cards { display: flex; min-height: 112px; }
+.card {
+  width: 76px;
+  height: 108px;
+  background: var(--card);
+  color: var(--card-black);
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+  position: relative;
+  margin-right: -28px;
+  flex-shrink: 0;
+}
+.card.new { animation: deal .25s ease-out both; }
+.card.red { color: var(--card-red); }
+.card .corner {
+  position: absolute;
+  top: 5px; left: 7px;
+  font-size: .85rem; font-weight: 700; line-height: 1;
+  text-align: center;
+}
+.card .corner.bottom { top: auto; left: auto; bottom: 5px; right: 7px; transform: rotate(180deg); }
+.card .pip {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-size: 2.2rem;
+}
+.card.back {
+  background:
+    repeating-linear-gradient(45deg, #8b1e2d 0 6px, #a72a3b 6px 12px);
+  border: 4px solid #fff;
+}
+@keyframes deal {
+  from { transform: translateY(-30px) scale(.9); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.message {
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(0,0,0,.25);
+  min-height: 44px;
+}
+.message.win { color: var(--pos); }
+.message.lose { color: var(--neg); }
+
+.player-zone { flex: 1; }
+.hands { display: flex; flex-wrap: wrap; gap: 18px; }
+.hand {
+  padding: 10px 36px 10px 10px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: border-color .2s, background .2s;
+}
+.hand.active { border-color: var(--gold); background: rgba(224,184,79,.08); }
+.hand-info { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: .9rem; }
+.hand-bet { color: var(--gold); font-weight: 600; }
+.badge {
+  margin-top: 6px;
+  font-weight: 700;
+  font-size: .9rem;
+}
+.hand.r-win .badge, .hand.r-blackjack .badge { color: var(--pos); }
+.hand.r-lose .badge, .hand.r-bust .badge { color: var(--neg); }
+.hand.r-push .badge { color: var(--muted); }
+
+/* ---- Contrôles ---- */
+.controls { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.betting { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.bet-display { font-size: 1.1rem; }
+.bet-display strong { color: var(--gold); }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.chip {
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  border: 4px dashed rgba(255,255,255,.8);
+  color: #fff; font-weight: 800; font-size: .95rem;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0,0,0,.4);
+  transition: transform .1s;
+}
+.chip:hover:not(:disabled) { transform: translateY(-3px); }
+.chip:disabled { opacity: .35; cursor: not-allowed; }
+.c1 { background: #6c757d; }
+.c5 { background: #c0392b; }
+.c25 { background: #1e8449; }
+.c100 { background: #1f1f1f; }
+.c500 { background: #6c3483; }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.1);
+  color: var(--text);
+  cursor: pointer;
+  transition: background .15s, opacity .15s;
+}
+.btn:hover:not(:disabled) { background: rgba(255,255,255,.2); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.primary { background: var(--gold); color: #2a1f00; border-color: var(--gold); }
+.btn.primary:hover:not(:disabled) { background: #f0ca63; }
+.btn.ghost { background: transparent; }
+.btn.full { width: 100%; margin-top: 8px; }
+.btn.danger { color: var(--neg); border-color: rgba(255,122,122,.4); }
+.actions .btn { min-width: 100px; }
+
+/* ---- Banque ---- */
+.bank {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 18px;
+  align-self: start;
+}
+.bank h2 { margin: 0 0 12px; font-size: 1.2rem; color: var(--gold); }
+.bank h3 { margin: 18px 0 8px; font-size: 1rem; color: var(--muted); }
+
+.stats { margin: 0; display: grid; gap: 6px; }
+.stats div { display: flex; justify-content: space-between; gap: 12px; }
+.stats dt { color: var(--muted); }
+.stats dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stats .big { border-top: 1px solid var(--panel-border); padding-top: 8px; margin-top: 4px; font-size: 1.15rem; }
+.stats .big dt { color: var(--text); }
+
+.pos { color: var(--pos); }
+.neg { color: var(--neg); }
+
+.money-form { margin-top: 16px; }
+.money-form label { display: block; font-size: .9rem; color: var(--muted); margin-bottom: 6px; }
+.money-form .row { justify-content: stretch; flex-wrap: nowrap; }
+.money-form input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: #0c1611;
+  color: var(--text);
+}
+
+.history {
+  list-style: none;
+  margin: 0; padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: .85rem;
+}
+.history li {
+  display: flex; justify-content: space-between; gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--panel-border);
+}
+.history li.empty { color: var(--muted); justify-content: center; }
+.history .h-deposit span, .history .h-withdraw span { color: var(--gold); }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); padding: 8px 16px 16px; }
+  .topbar { padding: 12px 16px 4px; }
+  .table { min-height: 0; border-width: 6px; padding: 14px; }
+  .card { width: 60px; height: 86px; margin-right: -22px; }
+  .card .pip { font-size: 1.7rem; }
+  .cards { min-height: 90px; }
+  .hand { padding-right: 28px; }
+}
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -85,7 +329,653 @@
     </aside>
   </main>
 
-  <script src="blackjack.js"></script>
-  <script src="app.js"></script>
+  <script id="engine">
+/*
+ * Moteur de blackjack (sans interface).
+ *
+ * Règles :
+ *  - Sabot de 6 jeux, remélangé quand il reste moins de 25 % des cartes.
+ *  - Le croupier reste sur tous les 17 (y compris 17 souple).
+ *  - Le croupier vérifie s'il a un blackjack quand sa carte visible est un As ou une figure/10.
+ *  - Blackjack naturel payé 3 pour 2.
+ *  - Victoire normale payée 1 pour 1, égalité = mise rendue.
+ *  - Doublement autorisé sur les deux premières cartes, Y COMPRIS après un split.
+ *  - Split de deux cartes de même valeur, jusqu'à 4 mains.
+ *  - Split d'As : une seule carte par As. Un 21 après split n'est pas un blackjack.
+ */
+(function (global) {
+  'use strict';
+
+  const SUITS = ['♠', '♥', '♦', '♣'];
+  const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+  const BLACKJACK_PAYOUT = 1.5; // 3 pour 2
+  const MAX_HANDS = 4;
+
+  function cardValue(card) {
+    if (card.rank === 'A') return 11;
+    if (['J', 'Q', 'K'].includes(card.rank)) return 10;
+    return Number(card.rank);
+  }
+
+  function handValue(cards) {
+    let total = 0;
+    let aces = 0;
+    for (const c of cards) {
+      total += cardValue(c);
+      if (c.rank === 'A') aces++;
+    }
+    while (total > 21 && aces > 0) {
+      total -= 10;
+      aces--;
+    }
+    return { total, soft: aces > 0 };
+  }
+
+  function isBlackjack(cards) {
+    return cards.length === 2 && handValue(cards).total === 21;
+  }
+
+  function createShoe(decks, rng) {
+    const cards = [];
+    for (let d = 0; d < decks; d++) {
+      for (const suit of SUITS) {
+        for (const rank of RANKS) cards.push({ rank, suit });
+      }
+    }
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    return cards;
+  }
+
+  function roundMoney(n) {
+    return Math.round(n * 100) / 100;
+  }
+
+  class BlackjackGame {
+    constructor(options = {}) {
+      this.decks = options.decks || 6;
+      this.rng = options.rng || Math.random;
+      this.balance = options.balance || 0;
+      this.shoe = [];
+      this.shoeSize = 0;
+      this.phase = 'betting'; // betting | player | done
+      this.dealer = [];
+      this.hands = [];
+      this.active = 0;
+      this.lastRound = null;
+      this.reshuffled = false;
+      this.reshuffle();
+    }
+
+    reshuffle() {
+      this.shoe = createShoe(this.decks, this.rng);
+      this.shoeSize = this.shoe.length;
+      this.reshuffled = true;
+    }
+
+    draw() {
+      if (this.shoe.length === 0) this.reshuffle();
+      return this.shoe.pop();
+    }
+
+    // ---- Argent -------------------------------------------------------
+
+    deposit(amount) {
+      amount = roundMoney(Number(amount));
+      if (!(amount > 0)) throw new Error('Montant invalide');
+      this.balance = roundMoney(this.balance + amount);
+      return this.balance;
+    }
+
+    withdraw(amount) {
+      if (this.phase === 'player') throw new Error('Impossible pendant une manche');
+      amount = roundMoney(Number(amount));
+      if (!(amount > 0)) throw new Error('Montant invalide');
+      if (amount > this.balance) throw new Error('Solde insuffisant');
+      this.balance = roundMoney(this.balance - amount);
+      return amount;
+    }
+
+    // ---- Déroulement d'une manche -------------------------------------
+
+    deal(bet) {
+      if (this.phase === 'player') throw new Error('Manche déjà en cours');
+      bet = roundMoney(Number(bet));
+      if (!(bet > 0)) throw new Error('Mise invalide');
+      if (bet > this.balance) throw new Error('Solde insuffisant');
+
+      this.reshuffled = false;
+      if (this.shoe.length < this.shoeSize * 0.25) this.reshuffle();
+
+      this.balance = roundMoney(this.balance - bet);
+      this.hands = [this._newHand([], bet, false)];
+      this.dealer = [];
+      this.active = 0;
+      this.lastRound = null;
+
+      this.hands[0].cards.push(this.draw());
+      this.dealer.push(this.draw());
+      this.hands[0].cards.push(this.draw());
+      this.dealer.push(this.draw());
+
+      this.phase = 'player';
+
+      const playerBJ = isBlackjack(this.hands[0].cards);
+      const dealerBJ = isBlackjack(this.dealer);
+      if (playerBJ || dealerBJ) {
+        this.hands[0].done = true;
+        this._settle();
+      }
+      return this.state();
+    }
+
+    _newHand(cards, bet, fromSplit) {
+      return { cards, bet, fromSplit, splitAces: false, doubled: false, done: false, result: null, payout: 0 };
+    }
+
+    get currentHand() {
+      return this.phase === 'player' ? this.hands[this.active] : null;
+    }
+
+    canHit() {
+      const h = this.currentHand;
+      return !!h && !h.done && !h.splitAces;
+    }
+
+    canStand() {
+      const h = this.currentHand;
+      return !!h && !h.done;
+    }
+
+    canDouble() {
+      const h = this.currentHand;
+      return !!h && !h.done && !h.splitAces && h.cards.length === 2 && this.balance >= h.bet;
+    }
+
+    canSplit() {
+      const h = this.currentHand;
+      return (
+        !!h &&
+        !h.done &&
+        h.cards.length === 2 &&
+        cardValue(h.cards[0]) === cardValue(h.cards[1]) &&
+        this.hands.length < MAX_HANDS &&
+        !h.splitAces &&
+        this.balance >= h.bet
+      );
+    }
+
+    hit() {
+      if (!this.canHit()) throw new Error('Action impossible');
+      const h = this.currentHand;
+      h.cards.push(this.draw());
+      const v = handValue(h.cards).total;
+      if (v >= 21) {
+        h.done = true;
+        this._advance();
+      }
+      return this.state();
+    }
+
+    stand() {
+      if (!this.canStand()) throw new Error('Action impossible');
+      this.currentHand.done = true;
+      this._advance();
+      return this.state();
+    }
+
+    double() {
+      if (!this.canDouble()) throw new Error('Action impossible');
+      const h = this.currentHand;
+      this.balance = roundMoney(this.balance - h.bet);
+      h.bet = roundMoney(h.bet * 2);
+      h.doubled = true;
+      h.cards.push(this.draw());
+      h.done = true;
+      this._advance();
+      return this.state();
+    }
+
+    split() {
+      if (!this.canSplit()) throw new Error('Action impossible');
+      const h = this.currentHand;
+      this.balance = roundMoney(this.balance - h.bet);
+      const aces = h.cards[0].rank === 'A';
+      const second = this._newHand([h.cards.pop()], h.bet, true);
+      h.fromSplit = true;
+      h.cards.push(this.draw());
+      second.cards.push(this.draw());
+      this.hands.splice(this.active + 1, 0, second);
+
+      for (const hand of [h, second]) {
+        if (aces) {
+          hand.splitAces = true;
+          hand.done = true;
+        } else if (handValue(hand.cards).total === 21) {
+          hand.done = true;
+        }
+      }
+      if (h.done) this._advance();
+      return this.state();
+    }
+
+    _advance() {
+      while (this.active < this.hands.length && this.hands[this.active].done) this.active++;
+      if (this.active >= this.hands.length) this._dealerPlay();
+    }
+
+    _dealerPlay() {
+      const anyAlive = this.hands.some((h) => handValue(h.cards).total <= 21);
+      if (anyAlive) {
+        while (handValue(this.dealer).total < 17) this.dealer.push(this.draw());
+      }
+      this._settle();
+    }
+
+    _settle() {
+      const dealerTotal = handValue(this.dealer).total;
+      const dealerBJ = isBlackjack(this.dealer);
+      let wagered = 0;
+      let returned = 0;
+
+      for (const h of this.hands) {
+        const total = handValue(h.cards).total;
+        const playerBJ = !h.fromSplit && isBlackjack(h.cards);
+        wagered += h.bet;
+
+        if (playerBJ && dealerBJ) {
+          h.result = 'push';
+          h.payout = h.bet;
+        } else if (playerBJ) {
+          h.result = 'blackjack';
+          h.payout = h.bet + h.bet * BLACKJACK_PAYOUT;
+        } else if (dealerBJ) {
+          h.result = 'lose';
+          h.payout = 0;
+        } else if (total > 21) {
+          h.result = 'bust';
+          h.payout = 0;
+        } else if (dealerTotal > 21 || total > dealerTotal) {
+          h.result = 'win';
+          h.payout = h.bet * 2;
+        } else if (total === dealerTotal) {
+          h.result = 'push';
+          h.payout = h.bet;
+        } else {
+          h.result = 'lose';
+          h.payout = 0;
+        }
+        h.payout = roundMoney(h.payout);
+        returned += h.payout;
+      }
+
+      this.balance = roundMoney(this.balance + returned);
+      this.phase = 'done';
+      this.lastRound = {
+        wagered: roundMoney(wagered),
+        returned: roundMoney(returned),
+        profit: roundMoney(returned - wagered),
+      };
+    }
+
+    state() {
+      return {
+        phase: this.phase,
+        balance: this.balance,
+        dealer: this.dealer.slice(),
+        hands: this.hands,
+        active: this.active,
+        lastRound: this.lastRound,
+      };
+    }
+  }
+
+  const api = { BlackjackGame, handValue, isBlackjack, cardValue, BLACKJACK_PAYOUT, MAX_HANDS };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else global.Blackjack = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+  </script>
+  <script>
+(function () {
+  'use strict';
+
+  const { BlackjackGame, handValue } = window.Blackjack;
+  const STORAGE_KEY = 'blackjack-fictif-v1';
+
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) =>
+    n.toLocaleString('fr-FR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €';
+  const signed = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
+
+  // ---- État persistant ---------------------------------------------------
+
+  const saved = load();
+  const bank = {
+    deposited: saved.deposited || 0,
+    withdrawn: saved.withdrawn || 0,
+    history: saved.history || [],
+  };
+  const game = new BlackjackGame({ balance: saved.balance || 0 });
+  let bet = 0;
+  let lastBet = saved.lastBet || 0;
+
+  function load() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ balance: game.balance, deposited: bank.deposited, withdrawn: bank.withdrawn, history: bank.history, lastBet })
+      );
+    } catch (e) {
+      /* stockage indisponible : on continue sans sauvegarde */
+    }
+  }
+
+  function addHistory(type, text, amount) {
+    bank.history.unshift({ type, text, amount });
+    bank.history = bank.history.slice(0, 40);
+  }
+
+  // ---- Rendu ---------------------------------------------------------------
+
+  // Mémorise les cartes déjà affichées pour n'animer que les nouvelles.
+  let shown = {};
+  let fresh = {};
+
+  function cardEl(card, hidden, zone, index) {
+    const el = document.createElement('div');
+    const key = hidden ? 'back' : card.rank + card.suit;
+    const isNew = (shown[zone] || [])[index] !== key;
+    (fresh[zone] = fresh[zone] || [])[index] = key;
+    const anim = isNew ? ' new' : '';
+    if (hidden) {
+      el.className = 'card back' + anim;
+      return el;
+    }
+    const red = card.suit === '♥' || card.suit === '♦';
+    el.className = 'card' + (red ? ' red' : '') + anim;
+    el.innerHTML =
+      `<span class="corner">${card.rank}<br>${card.suit}</span>` +
+      `<span class="pip">${card.suit}</span>` +
+      `<span class="corner bottom">${card.rank}<br>${card.suit}</span>`;
+    return el;
+  }
+
+  function totalText(cards) {
+    const v = handValue(cards);
+    if (cards.length === 2 && v.total === 21) return '21';
+    return v.soft && v.total < 21 ? `${v.total - 10} / ${v.total}` : String(v.total);
+  }
+
+  const RESULT_LABELS = {
+    blackjack: 'Blackjack !',
+    win: 'Gagné',
+    push: 'Égalité',
+    lose: 'Perdu',
+    bust: 'Sauté',
+  };
+
+  function render() {
+    const playing = game.phase === 'player';
+    const hideHole = playing;
+    fresh = {};
+
+    // Croupier
+    const dealerCards = $('dealer-cards');
+    dealerCards.innerHTML = '';
+    game.dealer.forEach((c, i) => dealerCards.appendChild(cardEl(c, hideHole && i === 1, 'dealer', i)));
+    $('dealer-total').textContent = game.dealer.length
+      ? hideHole
+        ? totalText([game.dealer[0]])
+        : totalText(game.dealer)
+      : '';
+
+    // Joueur
+    const handsEl = $('player-hands');
+    handsEl.innerHTML = '';
+    game.hands.forEach((h, idx) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'hand';
+      if (playing && idx === game.active) wrap.classList.add('active');
+      if (h.result) wrap.classList.add('r-' + h.result);
+
+      const cards = document.createElement('div');
+      cards.className = 'cards';
+      h.cards.forEach((c, i) => cards.appendChild(cardEl(c, false, 'hand' + idx, i)));
+
+      const info = document.createElement('div');
+      info.className = 'hand-info';
+      const label = game.hands.length > 1 ? `Main ${idx + 1} · ` : '';
+      info.innerHTML =
+        `<span class="total">${label}${totalText(h.cards)}</span>` +
+        `<span class="hand-bet">${fmt(h.bet)}${h.doubled ? ' (doublé)' : ''}</span>`;
+
+      wrap.appendChild(cards);
+      wrap.appendChild(info);
+
+      if (h.result) {
+        const badge = document.createElement('div');
+        badge.className = 'badge';
+        const gain = h.payout - h.bet;
+        badge.textContent = `${RESULT_LABELS[h.result]} ${signed(gain)}`;
+        wrap.appendChild(badge);
+      }
+      handsEl.appendChild(wrap);
+    });
+
+    shown = fresh;
+
+    // Contrôles
+    $('betting-controls').hidden = playing;
+    $('action-controls').hidden = !playing;
+    $('bet-amount').textContent = fmt(bet);
+    $('btn-deal').disabled = bet <= 0 || bet > game.balance;
+    $('btn-hit').disabled = !game.canHit();
+    $('btn-stand').disabled = !game.canStand();
+    $('btn-double').disabled = !game.canDouble();
+    $('btn-split').disabled = !game.canSplit();
+    document.querySelectorAll('.chip').forEach((chip) => {
+      chip.disabled = bet + Number(chip.dataset.value) > game.balance;
+    });
+    $('withdraw-form').querySelectorAll('button, input').forEach((el) => (el.disabled = playing));
+
+    // Banque
+    const inPlay = playing ? game.hands.reduce((s, h) => s + h.bet, 0) : 0;
+    const profit = round(game.balance + inPlay + bank.withdrawn - bank.deposited);
+    $('stat-balance').textContent = fmt(game.balance);
+    $('stat-deposited').textContent = fmt(bank.deposited);
+    $('stat-withdrawn').textContent = fmt(bank.withdrawn);
+    setSigned($('stat-profit'), profit);
+    if (game.lastRound) setSigned($('stat-last'), game.lastRound.profit);
+    else if (!playing) {
+      const lastRound = bank.history.find((e) => e.type === 'round');
+      if (lastRound) setSigned($('stat-last'), lastRound.amount);
+    }
+
+    // Historique
+    const hist = $('history');
+    hist.innerHTML = '';
+    if (!bank.history.length) {
+      hist.innerHTML = '<li class="empty">Aucune opération pour l’instant.</li>';
+    }
+    bank.history.forEach((e) => {
+      const li = document.createElement('li');
+      li.className = 'h-' + e.type;
+      const amount = e.type === 'round' ? signed(e.amount) : fmt(e.amount);
+      li.innerHTML = `<span>${e.text}</span><strong class="${cls(e.type === 'round' ? e.amount : 0)}">${amount}</strong>`;
+      hist.appendChild(li);
+    });
+  }
+
+  function round(n) {
+    return Math.round(n * 100) / 100;
+  }
+
+  function cls(n) {
+    return n > 0 ? 'pos' : n < 0 ? 'neg' : '';
+  }
+
+  function setSigned(el, n) {
+    el.textContent = signed(n);
+    el.className = cls(n);
+  }
+
+  function message(text, tone) {
+    const el = $('message');
+    el.textContent = text;
+    el.className = 'message' + (tone ? ' ' + tone : '');
+  }
+
+  // ---- Fin de manche ---------------------------------------------------------
+
+  function afterAction() {
+    if (game.phase === 'done' && game.lastRound) {
+      const p = game.lastRound.profit;
+      const results = game.hands.map((h) => RESULT_LABELS[h.result]).join(' · ');
+      const tone = p > 0 ? 'win' : p < 0 ? 'lose' : '';
+      message(`${results} — Bénéfice de la manche : ${signed(p)}`, tone);
+      addHistory('round', results, p);
+      bet = lastBet <= game.balance ? lastBet : 0;
+      save();
+    } else if (game.phase === 'player') {
+      const multi = game.hands.length > 1 ? ` (main ${game.active + 1}/${game.hands.length})` : '';
+      message('À vous de jouer' + multi + '.');
+    }
+    render();
+  }
+
+  // ---- Événements --------------------------------------------------------------
+
+  $('chips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip || game.phase === 'player') return;
+    const v = Number(chip.dataset.value);
+    if (bet + v <= game.balance) bet = round(bet + v);
+    render();
+  });
+
+  $('btn-clear').addEventListener('click', () => {
+    bet = 0;
+    render();
+  });
+
+  $('btn-max').addEventListener('click', () => {
+    bet = game.balance;
+    render();
+  });
+
+  $('btn-deal').addEventListener('click', () => {
+    try {
+      lastBet = bet;
+      game.deal(bet);
+      if (game.reshuffled) message('Sabot remélangé.');
+      save();
+      afterAction();
+    } catch (err) {
+      message(err.message, 'lose');
+    }
+  });
+
+  const actions = { 'btn-hit': 'hit', 'btn-stand': 'stand', 'btn-double': 'double', 'btn-split': 'split' };
+  Object.entries(actions).forEach(([id, method]) => {
+    $(id).addEventListener('click', () => {
+      try {
+        game[method]();
+        save();
+        afterAction();
+      } catch (err) {
+        message(err.message, 'lose');
+      }
+    });
+  });
+
+  $('deposit-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const amount = round(Number($('deposit-input').value));
+    try {
+      game.deposit(amount);
+      bank.deposited = round(bank.deposited + amount);
+      addHistory('deposit', 'Dépôt', amount);
+      message(`${fmt(amount)} déposés. Placez votre mise.`);
+      save();
+      render();
+    } catch (err) {
+      message(err.message, 'lose');
+    }
+  });
+
+  function withdraw(amount) {
+    try {
+      game.withdraw(amount);
+      bank.withdrawn = round(bank.withdrawn + amount);
+      addHistory('withdraw', 'Gains récupérés', amount);
+      if (bet > game.balance) bet = 0;
+      const profit = round(game.balance + bank.withdrawn - bank.deposited);
+      message(`Vous avez récupéré ${fmt(amount)}. Bénéfice total : ${signed(profit)}`, profit >= 0 ? 'win' : 'lose');
+      $('withdraw-input').value = '';
+      save();
+      render();
+    } catch (err) {
+      message(err.message, 'lose');
+    }
+  }
+
+  $('withdraw-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    withdraw(round(Number($('withdraw-input').value)));
+  });
+
+  $('btn-withdraw-all').addEventListener('click', () => {
+    if (game.balance > 0) withdraw(game.balance);
+    else message('Rien à récupérer.', 'lose');
+  });
+
+  $('btn-reset').addEventListener('click', () => {
+    if (game.phase === 'player') return;
+    if (!confirm('Remettre à zéro le solde, les totaux et l’historique ?')) return;
+    game.balance = 0;
+    game.lastRound = null;
+    game.hands = [];
+    game.dealer = [];
+    game.phase = 'betting';
+    bank.deposited = 0;
+    bank.withdrawn = 0;
+    bank.history = [];
+    bet = 0;
+    lastBet = 0;
+    save();
+    message("Déposez de l'argent puis placez une mise.");
+    render();
+  });
+
+  // Raccourcis clavier : T tirer, R rester, D doubler, S séparer, Entrée distribuer
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    const k = e.key.toLowerCase();
+    const map = { t: 'btn-hit', r: 'btn-stand', d: 'btn-double', s: 'btn-split', enter: 'btn-deal' };
+    const btn = map[k] && $(map[k]);
+    if (btn && !btn.disabled && !btn.closest('[hidden]')) {
+      e.preventDefault();
+      btn.click();
+    }
+  });
+
+  if (game.balance > 0) {
+    bet = lastBet && lastBet <= game.balance ? lastBet : 0;
+    message('Bon retour ! Placez votre mise.');
+  }
+  render();
+})();
+  </script>
 </body>
 </html>

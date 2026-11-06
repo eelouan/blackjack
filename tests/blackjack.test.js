@@ -1,6 +1,14 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { BlackjackGame, handValue } = require('../blackjack.js');
+const fs = require('node:fs');
+const path = require('node:path');
+
+// Le moteur est dans index.html (<script id="engine">) : on l'extrait pour le tester.
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const source = html.match(/<script id="engine">([\s\S]*?)<\/script>/)[1];
+const sandbox = {};
+new Function('window', 'module', source)(sandbox, undefined);
+const { BlackjackGame, handValue } = sandbox.Blackjack;
 
 // Prépare un sabot truqué : les cartes sont tirées dans l'ordre donné.
 // Ordre de distribution : joueur, croupier, joueur, croupier, puis tirages.

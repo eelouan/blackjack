@@ -1,6 +1,6 @@
 # Blackjack (argent fictif)
 
-Jeu de blackjack dans le navigateur, sans dépendance. Ouvrez `index.html` dans un navigateur pour jouer.
+Jeu de blackjack dans le navigateur, sans dépendance. Tout tient dans un seul fichier : ouvrez `index.html` dans un navigateur pour jouer.
 
 ## Règles
 
