@@ -1839,7 +1839,19 @@ body {
 
   $('btn-reset').addEventListener('click', () => {
     if (busy || game.phase === 'player') return;
-    if (!confirm('Remettre à zéro le solde, les totaux et l’historique ?')) return;
+    // confirmation en deux appuis (les boîtes confirm() sont bloquées dans certaines vues)
+    const btn = $('btn-reset');
+    if (!btn.dataset.armed) {
+      btn.dataset.armed = '1';
+      btn.textContent = 'Appuyez à nouveau pour tout effacer';
+      setTimeout(() => {
+        delete btn.dataset.armed;
+        btn.textContent = 'Tout réinitialiser';
+      }, 4000);
+      return;
+    }
+    delete btn.dataset.armed;
+    btn.textContent = 'Tout réinitialiser';
     game.balance = 0;
     game.lastRound = null;
     game.hands = [];
