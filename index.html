@@ -1399,6 +1399,8 @@ body {
 
   let incoming = []; // cartes à animer lors du prochain rendu
   let busy = false; // vrai pendant l'animation de distribution
+  let revealPending = false; // vrai tant que le résultat de la manche n'est pas affiché
+  const locked = () => busy || revealPending; // table bloquée : pas de mise, d'action ni de dépôt
   let resultsShown = false; // résultat de la manche déjà dévoilé
   const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const DEAL_STEP = REDUCED ? 0 : 300; // ms entre deux cartes
@@ -1548,18 +1550,18 @@ body {
     $('betting-controls').hidden = playing;
     $('action-controls').hidden = !playing;
     $('bet-amount').textContent = fmt(bet);
-    $('btn-deal').disabled = busy || bet <= 0 || bet > game.balance;
-    $('btn-hit').disabled = busy || !game.canHit();
-    $('btn-stand').disabled = busy || !game.canStand();
-    $('btn-double').disabled = busy || !game.canDouble();
-    $('btn-split').disabled = busy || !game.canSplit();
-    const advice = showAdvice && playing && !busy ? currentAdvice() : null;
+    $('btn-deal').disabled = locked() || bet <= 0 || bet > game.balance;
+    $('btn-hit').disabled = locked() || !game.canHit();
+    $('btn-stand').disabled = locked() || !game.canStand();
+    $('btn-double').disabled = locked() || !game.canDouble();
+    $('btn-split').disabled = locked() || !game.canSplit();
+    const advice = showAdvice && playing && !locked() ? currentAdvice() : null;
     Object.entries(BUTTON_OF).forEach(([code, id]) => $(id).classList.toggle('advised', code === advice));
     $('advice-toggle').checked = showAdvice;
     document.querySelectorAll('.chip').forEach((chip) => {
       chip.disabled = bet + Number(chip.dataset.value) > game.balance;
     });
-    $('withdraw-form').querySelectorAll('button, input').forEach((el) => (el.disabled = playing || busy));
+    $('withdraw-form').querySelectorAll('button, input').forEach((el) => (el.disabled = playing || locked()));
   }
 
   function renderBank() {
@@ -1651,16 +1653,25 @@ body {
       addHistory('round', results, p);
       bet = lastBet <= game.balance ? lastBet : 0;
       save();
+      const settled = game.lastRound; // résultat de CETTE manche
+      revealPending = true;
       const wait = render();
       if (wait) message(game.dealer.length > 2 ? 'Le croupier joue…' : game.hands.some((h) => h.result === 'bust') ? '' : 'Distribution…');
       // le résultat n'apparaît qu'une fois toutes les cartes posées
       setTimeout(() => {
+        revealPending = false;
+        // sécurité : si une autre manche a commencé entre-temps, on n'affiche rien
+        if (game.lastRound !== settled) {
+          updateControls();
+          return;
+        }
         const tone = p > 0 ? 'win' : p < 0 ? 'lose' : '';
         message(`${results} — Bénéfice de la manche : ${signed(p)}`, tone);
         const msg = $('message');
         msg.classList.add('pop');
-        revealResults();
+        revealResults(settled);
         renderBank();
+        updateControls();
       }, wait + (wait ? 150 : 0));
       return;
     }
@@ -1674,10 +1685,10 @@ body {
   }
 
   // Effets de victoire / défaite sur chaque main
-  function revealResults() {
+  function revealResults(settled) {
     resultsShown = true;
     const table = $('table');
-    const p = game.lastRound.profit;
+    const p = settled.profit;
     table.classList.remove('flash-win', 'flash-lose');
     void table.offsetWidth; // relance l'animation
     if (p > 0) table.classList.add('flash-win');
@@ -1720,20 +1731,20 @@ body {
 
   $('chips').addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
-    if (!chip || busy || game.phase === 'player') return;
+    if (!chip || locked() || game.phase === 'player') return;
     const v = Number(chip.dataset.value);
     if (bet + v <= game.balance) bet = round(bet + v);
     render();
   });
 
   $('btn-clear').addEventListener('click', () => {
-    if (busy) return;
+    if (locked()) return;
     bet = 0;
     render();
   });
 
   $('btn-max').addEventListener('click', () => {
-    if (busy) return;
+    if (locked()) return;
     bet = game.balance;
     render();
   });
@@ -1779,7 +1790,7 @@ body {
 
   $('deposit-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    if (busy) {
+    if (locked()) {
       formStatus('deposit-status', 'Patientez, les cartes sont en cours de distribution.', false);
       return;
     }
@@ -1838,7 +1849,7 @@ body {
   });
 
   $('btn-reset').addEventListener('click', () => {
-    if (busy || game.phase === 'player') return;
+    if (locked() || game.phase === 'player') return;
     // confirmation en deux appuis (les boîtes confirm() sont bloquées dans certaines vues)
     const btn = $('btn-reset');
     if (!btn.dataset.armed) {
@@ -1873,7 +1884,7 @@ body {
   $('advice-toggle').addEventListener('change', (e) => {
     showAdvice = e.target.checked;
     save();
-    if (game.phase === 'player' && !busy) afterAction();
+    if (game.phase === 'player' && !locked()) afterAction();
     else updateControls();
   });
 
