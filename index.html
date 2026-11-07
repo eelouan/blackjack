@@ -352,6 +352,16 @@ body {
 .money-form { margin-top: 16px; }
 .money-form label { display: block; font-size: .9rem; color: var(--muted); margin-bottom: 6px; }
 .money-form .row { justify-content: stretch; flex-wrap: nowrap; }
+.js-warning {
+  margin: 12px 16px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #4a1414;
+  border: 1px solid #ff7a7a;
+  color: #ffe3e3;
+  font-size: .95rem;
+  line-height: 1.4;
+}
 .form-status { margin: 6px 0 0; font-size: .85rem; min-height: 1.2em; }
 .form-status:empty { display: none; }
 .form-status.ok { color: var(--pos); }
@@ -396,6 +406,22 @@ body {
   </style>
 </head>
 <body>
+  <div id="js-warning" class="js-warning" role="alert">
+    <strong>Le jeu n'a pas démarré.</strong>
+    Cette page est affichée sans JavaScript, donc les boutons ne font rien.
+    C'est le cas des aperçus (app Fichiers de l'iPhone, aperçu GitHub, visionneuse d'une autre app).
+    Ouvrez le fichier dans Safari ou Chrome, ou utilisez le lien en ligne du jeu.
+  </div>
+  <script>
+    // Si le JavaScript tourne, on retire l'avertissement ; toute erreur est affichée à l'écran.
+    document.getElementById('js-warning').hidden = true;
+    window.addEventListener('error', function (e) {
+      var box = document.getElementById('js-warning');
+      box.hidden = false;
+      box.innerHTML = '<strong>Erreur du jeu :</strong> ' + String(e.message).replace(/</g, '&lt;') +
+        ' (ligne ' + e.lineno + '). Envoyez-moi ce message pour que je corrige.';
+    });
+  </script>
   <header class="topbar">
     <h1>Blackjack</h1>
     <p class="rules">Blackjack payé <strong>3 pour 2</strong> · Double après split · Le croupier reste sur 17 · Sabot remélangé à chaque manche · Argent fictif</p>
