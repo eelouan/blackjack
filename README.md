@@ -21,6 +21,17 @@ Jeu de blackjack dans le navigateur, sans dépendance. Tout tient dans un seul f
   (solde + récupéré − déposé) est toujours visible dans la banque, avec l'historique des opérations.
 - Le solde, les totaux et l'historique sont sauvegardés dans le navigateur (localStorage).
 
+## Conseiller de stratégie de base
+
+- La case **« Afficher le conseil de la stratégie de base »** met en évidence le bouton conseillé
+  (Tirer, Rester, Doubler ou Séparer) pour chaque main.
+- Quand vous jouez autrement que la stratégie, le jeu l'indique (« Écart à la stratégie : il fallait doubler »),
+  et la banque affiche votre **taux de respect de la stratégie**.
+- La table de stratégie est intégrée à `index.html` (`<script type="application/json" id="strategy">`),
+  au même format que `strategie-blackjack.json` : il suffit de remplacer ce bloc pour changer de stratégie.
+- Replis : « D » se transforme en tirer et « Ds » en rester quand on ne peut plus doubler ; une paire
+  qu'on ne peut pas séparer se joue comme un total normal.
+
 Raccourcis clavier : `T` tirer, `R` rester, `D` doubler, `S` séparer, `Entrée` distribuer.
 
 ## Tests

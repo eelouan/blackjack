@@ -214,6 +214,25 @@ body {
 @keyframes flash-lose { 30% { box-shadow: inset 0 0 90px rgba(255,90,90,.5), 0 10px 30px rgba(0,0,0,.4); } }
 .message.pop { animation: pop .4s cubic-bezier(.3,1.6,.5,1) both; }
 
+.advice-toggle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .9rem; color: #dfeee5; cursor: pointer;
+}
+.advice-toggle input { width: 18px; height: 18px; accent-color: var(--gold); }
+.btn.advised:not(:disabled) {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold), 0 0 16px rgba(224,184,79,.55);
+  position: relative;
+}
+.btn.advised:not(:disabled)::after {
+  content: "conseillé";
+  position: absolute; left: 50%; top: -11px; transform: translateX(-50%);
+  font-size: .65rem; font-weight: 700; letter-spacing: .03em;
+  background: var(--gold); color: #2a1f00;
+  padding: 1px 6px; border-radius: 999px;
+}
+.strategy-note { display: block; font-size: .85rem; font-weight: 500; color: #ffd27a; margin-top: 4px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
@@ -395,6 +414,7 @@ body {
           </div>
         </div>
 
+        <label class="advice-toggle"><input type="checkbox" id="advice-toggle"> Afficher le conseil de la stratégie de base</label>
         <div id="action-controls" class="actions" hidden>
           <button id="btn-hit" class="btn">Tirer</button>
           <button id="btn-stand" class="btn">Rester</button>
@@ -412,6 +432,7 @@ body {
         <div><dt>Total récupéré</dt><dd id="stat-withdrawn">0 €</dd></div>
         <div class="big"><dt>Bénéfice total</dt><dd id="stat-profit">0 €</dd></div>
         <div><dt>Bénéfice dernière manche</dt><dd id="stat-last">—</dd></div>
+        <div><dt>Respect de la stratégie</dt><dd id="stat-strategy">—</dd></div>
       </dl>
 
       <form id="deposit-form" class="money-form">
@@ -438,6 +459,490 @@ body {
     </aside>
   </main>
 
+  <script type="application/json" id="strategy">
+{
+  "nom": "Stratégie de base black-jack",
+  "regles": {
+    "paquets": 6,
+    "blackjack_paye": "3:2",
+    "croupier_17_souple": "reste (S17)",
+    "double_apres_split": true,
+    "double": "sur 2 cartes, n'importe quel total",
+    "split_max_mains": 4,
+    "as_separes": "une seule carte par As",
+    "abandon": false
+  },
+  "legende": {
+    "H": "Tirer",
+    "S": "Rester",
+    "D": "Doubler (si impossible : tirer)",
+    "Ds": "Doubler (si impossible : rester)",
+    "P": "Séparer"
+  },
+  "cartes_croupier": [
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "A"
+  ],
+  "ordre_de_lecture": [
+    "1. Paire ? Regarde 'paires'. Si l'action n'est pas P, joue la main comme un total dur (ou souple pour A,A).",
+    "2. Main avec un As compté 11 ? Regarde 'souples'.",
+    "3. Sinon, regarde 'durs'."
+  ],
+  "durs": {
+    "5": {
+      "2": "H",
+      "3": "H",
+      "4": "H",
+      "5": "H",
+      "6": "H",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "6": {
+      "2": "H",
+      "3": "H",
+      "4": "H",
+      "5": "H",
+      "6": "H",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "7": {
+      "2": "H",
+      "3": "H",
+      "4": "H",
+      "5": "H",
+      "6": "H",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "8": {
+      "2": "H",
+      "3": "H",
+      "4": "H",
+      "5": "H",
+      "6": "H",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "9": {
+      "2": "H",
+      "3": "D",
+      "4": "D",
+      "5": "D",
+      "6": "D",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "10": {
+      "2": "D",
+      "3": "D",
+      "4": "D",
+      "5": "D",
+      "6": "D",
+      "7": "D",
+      "8": "D",
+      "9": "D",
+      "10": "H",
+      "A": "H"
+    },
+    "11": {
+      "2": "D",
+      "3": "D",
+      "4": "D",
+      "5": "D",
+      "6": "D",
+      "7": "D",
+      "8": "D",
+      "9": "D",
+      "10": "D",
+      "A": "H"
+    },
+    "12": {
+      "2": "H",
+      "3": "H",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "13": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "14": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "15": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "16": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "17": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "S",
+      "8": "S",
+      "9": "S",
+      "10": "S",
+      "A": "S"
+    },
+    "18": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "S",
+      "8": "S",
+      "9": "S",
+      "10": "S",
+      "A": "S"
+    },
+    "19": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "S",
+      "8": "S",
+      "9": "S",
+      "10": "S",
+      "A": "S"
+    },
+    "20": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "S",
+      "8": "S",
+      "9": "S",
+      "10": "S",
+      "A": "S"
+    },
+    "21": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "S",
+      "8": "S",
+      "9": "S",
+      "10": "S",
+      "A": "S"
+    }
+  },
+  "souples": {
+    "A,2": {
+      "2": "H",
+      "3": "H",
+      "4": "H",
+      "5": "D",
+      "6": "D",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "A,3": {
+      "2": "H",
+      "3": "H",
+      "4": "H",
+      "5": "D",
+      "6": "D",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "A,4": {
+      "2": "H",
+      "3": "H",
+      "4": "D",
+      "5": "D",
+      "6": "D",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "A,5": {
+      "2": "H",
+      "3": "H",
+      "4": "D",
+      "5": "D",
+      "6": "D",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "A,6": {
+      "2": "H",
+      "3": "D",
+      "4": "D",
+      "5": "D",
+      "6": "D",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "A,7": {
+      "2": "S",
+      "3": "Ds",
+      "4": "Ds",
+      "5": "Ds",
+      "6": "Ds",
+      "7": "S",
+      "8": "S",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "A,8": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "S",
+      "8": "S",
+      "9": "S",
+      "10": "S",
+      "A": "S"
+    },
+    "A,9": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "S",
+      "8": "S",
+      "9": "S",
+      "10": "S",
+      "A": "S"
+    }
+  },
+  "paires": {
+    "2,2": {
+      "2": "P",
+      "3": "P",
+      "4": "P",
+      "5": "P",
+      "6": "P",
+      "7": "P",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "3,3": {
+      "2": "P",
+      "3": "P",
+      "4": "P",
+      "5": "P",
+      "6": "P",
+      "7": "P",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "4,4": {
+      "2": "H",
+      "3": "H",
+      "4": "H",
+      "5": "P",
+      "6": "P",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "5,5": {
+      "2": "D",
+      "3": "D",
+      "4": "D",
+      "5": "D",
+      "6": "D",
+      "7": "D",
+      "8": "D",
+      "9": "D",
+      "10": "H",
+      "A": "H"
+    },
+    "6,6": {
+      "2": "P",
+      "3": "P",
+      "4": "P",
+      "5": "P",
+      "6": "P",
+      "7": "H",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "7,7": {
+      "2": "P",
+      "3": "P",
+      "4": "P",
+      "5": "P",
+      "6": "P",
+      "7": "P",
+      "8": "H",
+      "9": "H",
+      "10": "H",
+      "A": "H"
+    },
+    "8,8": {
+      "2": "P",
+      "3": "P",
+      "4": "P",
+      "5": "P",
+      "6": "P",
+      "7": "P",
+      "8": "P",
+      "9": "P",
+      "10": "P",
+      "A": "P"
+    },
+    "9,9": {
+      "2": "P",
+      "3": "P",
+      "4": "P",
+      "5": "P",
+      "6": "P",
+      "7": "S",
+      "8": "P",
+      "9": "P",
+      "10": "S",
+      "A": "S"
+    },
+    "10,10": {
+      "2": "S",
+      "3": "S",
+      "4": "S",
+      "5": "S",
+      "6": "S",
+      "7": "S",
+      "8": "S",
+      "9": "S",
+      "10": "S",
+      "A": "S"
+    },
+    "A,A": {
+      "2": "P",
+      "3": "P",
+      "4": "P",
+      "5": "P",
+      "6": "P",
+      "7": "P",
+      "8": "P",
+      "9": "P",
+      "10": "P",
+      "A": "P"
+    }
+  },
+  "assurance": "Jamais (ni even money)",
+  "moyens_mnemotechniques": [
+    "12, c'est 4-5-6 : on reste sur 12 seulement contre 4, 5 ou 6",
+    "13 à 16 : reste contre 2-6, tire contre 7 et plus",
+    "17 dur et plus : toujours rester",
+    "11 : double contre tout sauf l'As",
+    "10 : double contre 2 à 9",
+    "9 : double contre 3 à 6",
+    "Doubles souples : As-2/As-3 contre 5-6, As-4/As-5 contre 4-6, As-6/As-7 contre 3-6",
+    "Toujours séparer As et 8, jamais 10 et 5",
+    "9-9 : sépare sauf contre 7, 10 et As"
+  ],
+  "si_croupier_tire_sur_17_souple": {
+    "modifs": [
+      "11 contre As : D",
+      "A,8 contre 6 : Ds",
+      "A,7 contre 2 : Ds"
+    ]
+  }
+}
+  </script>
   <script id="engine">
 /*
  * Moteur de blackjack (sans interface).
@@ -742,7 +1247,43 @@ body {
     }
   }
 
-  const api = { BlackjackGame, handValue, isBlackjack, cardValue, BLACKJACK_PAYOUT, MAX_HANDS };
+  // ---- Stratégie de base ------------------------------------------------
+  //
+  // Renvoie l'action conseillée par la table `strategy` (format du fichier
+  // strategie-blackjack.json) : 'H' tirer, 'S' rester, 'D' doubler, 'P' séparer.
+  // `opts.canDouble` / `opts.canSplit` indiquent si l'action est possible ;
+  // sinon on applique la règle de repli de la légende (D -> tirer, Ds -> rester,
+  // P -> jouer la main comme un total normal).
+  function cardLabel(card) {
+    const v = cardValue(card);
+    return v === 11 ? 'A' : String(v);
+  }
+
+  function recommend(strategy, cards, dealerUp, opts = {}) {
+    const up = cardLabel(dealerUp);
+    const { total, soft } = handValue(cards);
+    let code;
+
+    if (cards.length === 2 && cardValue(cards[0]) === cardValue(cards[1])) {
+      const pair = strategy.paires[cardLabel(cards[0]) + ',' + cardLabel(cards[1])];
+      if (pair && pair[up] === 'P' && opts.canSplit) return 'P';
+      if (pair && pair[up] !== 'P') code = pair[up];
+    }
+    if (!code) {
+      if (soft) {
+        const row = strategy.souples['A,' + (total - 11)];
+        code = row ? row[up] : total >= 19 ? 'S' : 'H';
+      } else {
+        const row = strategy.durs[String(total)];
+        code = row ? row[up] : total < 5 ? 'H' : 'S';
+      }
+    }
+    if (code === 'D') return opts.canDouble ? 'D' : 'H';
+    if (code === 'Ds') return opts.canDouble ? 'D' : 'S';
+    return code;
+  }
+
+  const api = { BlackjackGame, handValue, isBlackjack, cardValue, recommend, BLACKJACK_PAYOUT, MAX_HANDS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else global.Blackjack = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -751,7 +1292,11 @@ body {
 (function () {
   'use strict';
 
-  const { BlackjackGame, handValue } = window.Blackjack;
+  const { BlackjackGame, handValue, recommend } = window.Blackjack;
+  const STRATEGY = JSON.parse(document.getElementById('strategy').textContent);
+  const ACTION_OF = { H: 'hit', S: 'stand', D: 'double', P: 'split' };
+  const BUTTON_OF = { H: 'btn-hit', S: 'btn-stand', D: 'btn-double', P: 'btn-split' };
+  const ACTION_LABEL = { H: 'Tirer', S: 'Rester', D: 'Doubler', P: 'Séparer' };
   const STORAGE_KEY = 'blackjack-fictif-v1';
 
   const $ = (id) => document.getElementById(id);
@@ -770,6 +1315,9 @@ body {
   const game = new BlackjackGame({ balance: saved.balance || 0 });
   let bet = 0;
   let lastBet = saved.lastBet || 0;
+  let showAdvice = !!saved.showAdvice;
+  const strategyStats = saved.strategyStats || { good: 0, total: 0 };
+  let strategyNote = ''; // écart à la stratégie sur la dernière décision
 
   function load() {
     try {
@@ -783,7 +1331,7 @@ body {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ balance: game.balance, deposited: bank.deposited, withdrawn: bank.withdrawn, history: bank.history, lastBet })
+        JSON.stringify({ balance: game.balance, deposited: bank.deposited, withdrawn: bank.withdrawn, history: bank.history, lastBet, showAdvice, strategyStats })
       );
     } catch (e) {
       /* stockage indisponible : on continue sans sauvegarde */
@@ -943,6 +1491,9 @@ body {
     $('btn-stand').disabled = busy || !game.canStand();
     $('btn-double').disabled = busy || !game.canDouble();
     $('btn-split').disabled = busy || !game.canSplit();
+    const advice = showAdvice && playing && !busy ? currentAdvice() : null;
+    Object.entries(BUTTON_OF).forEach(([code, id]) => $(id).classList.toggle('advised', code === advice));
+    $('advice-toggle').checked = showAdvice;
     document.querySelectorAll('.chip').forEach((chip) => {
       chip.disabled = bet + Number(chip.dataset.value) > game.balance;
     });
@@ -957,6 +1508,9 @@ body {
     $('stat-deposited').textContent = fmt(bank.deposited);
     $('stat-withdrawn').textContent = fmt(bank.withdrawn);
     setSigned($('stat-profit'), profit);
+    $('stat-strategy').textContent = strategyStats.total
+      ? `${Math.round((strategyStats.good / strategyStats.total) * 100)} % (${strategyStats.good}/${strategyStats.total})`
+      : '—';
     if (game.lastRound) setSigned($('stat-last'), game.lastRound.profit);
     else if (!playing) {
       const lastRound = bank.history.find((e) => e.type === 'round');
@@ -995,6 +1549,19 @@ body {
     const el = $('message');
     el.textContent = text;
     el.className = 'message' + (tone ? ' ' + tone : '');
+    if (strategyNote) {
+      const note = document.createElement('span');
+      note.className = 'strategy-note';
+      note.textContent = strategyNote;
+      el.appendChild(note);
+    }
+  }
+
+  // Action conseillée par la stratégie de base pour la main en cours.
+  function currentAdvice() {
+    const h = game.currentHand;
+    if (!h || h.done || h.splitAces) return null;
+    return recommend(STRATEGY, h.cards, game.dealer[0], { canDouble: game.canDouble(), canSplit: game.canSplit() });
   }
 
   // Explique pourquoi « Séparer » ou « Doubler » est grisé alors que la main le permettrait.
@@ -1037,7 +1604,9 @@ body {
     }
     if (game.phase === 'player') {
       const multi = game.hands.length > 1 ? ` (main ${game.active + 1}/${game.hands.length})` : '';
-      message('À vous de jouer' + multi + '.' + blockedHint());
+      const advice = showAdvice ? currentAdvice() : null;
+      const tip = advice ? ` Conseil : ${ACTION_LABEL[advice]}.` : '';
+      message('À vous de jouer' + multi + '.' + tip + blockedHint());
     }
     render();
   }
@@ -1112,6 +1681,7 @@ body {
       lastBet = bet;
       game.deal(bet);
       resultsShown = false;
+      strategyNote = '';
       shown = {}; // nouvelle manche : toutes les cartes sont distribuées depuis le sabot
       if (game.reshuffled) message('Sabot remélangé.');
       save();
@@ -1125,7 +1695,18 @@ body {
   Object.entries(actions).forEach(([id, method]) => {
     $(id).addEventListener('click', () => {
       try {
+        // compare la décision à la stratégie de base avant de jouer
+        const advice = currentAdvice();
         game[method]();
+        if (advice) {
+          strategyStats.total++;
+          if (ACTION_OF[advice] === method) {
+            strategyStats.good++;
+            strategyNote = '';
+          } else {
+            strategyNote = `Écart à la stratégie : il fallait ${ACTION_LABEL[advice].toLowerCase()}.`;
+          }
+        }
         save();
         afterAction();
       } catch (err) {
@@ -1187,11 +1768,21 @@ body {
     bank.deposited = 0;
     bank.withdrawn = 0;
     bank.history = [];
+    strategyStats.good = 0;
+    strategyStats.total = 0;
+    strategyNote = '';
     bet = 0;
     lastBet = 0;
     save();
     message("Déposez de l'argent puis placez une mise.");
     render();
+  });
+
+  $('advice-toggle').addEventListener('change', (e) => {
+    showAdvice = e.target.checked;
+    save();
+    if (game.phase === 'player' && !busy) afterAction();
+    else updateControls();
   });
 
   // Raccourcis clavier : T tirer, R rester, D doubler, S séparer, Entrée distribuer

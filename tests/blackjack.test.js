@@ -159,3 +159,45 @@ test('pas de double ni split sans solde suffisant', () => {
   assert.equal(g.canDouble(), false);
   assert.equal(g.canSplit(), false);
 });
+
+// ---- Stratégie de base -----------------------------------------------------
+
+const strategy = JSON.parse(html.match(/<script type="application\/json" id="strategy">([\s\S]*?)<\/script>/)[1]);
+const { recommend } = sandbox.Blackjack;
+const cards = (...ranks) => ranks.map((rank) => ({ rank, suit: '♠' }));
+const up = (rank) => ({ rank, suit: '♥' });
+const all = { canDouble: true, canSplit: true };
+
+test('stratégie : totaux durs', () => {
+  assert.equal(recommend(strategy, cards('10', '2'), up('2'), all), 'H'); // 12 contre 2
+  assert.equal(recommend(strategy, cards('10', '2'), up('4'), all), 'S'); // 12 contre 4
+  assert.equal(recommend(strategy, cards('10', '6'), up('7'), all), 'H'); // 16 contre 7
+  assert.equal(recommend(strategy, cards('10', '6'), up('6'), all), 'S');
+  assert.equal(recommend(strategy, cards('6', '5'), up('K'), all), 'D'); // 11 contre 10
+  assert.equal(recommend(strategy, cards('6', '5'), up('A'), all), 'H'); // 11 contre As (S17)
+  assert.equal(recommend(strategy, cards('10', '7'), up('A'), all), 'S');
+});
+
+test('stratégie : mains souples et doubles impossibles', () => {
+  assert.equal(recommend(strategy, cards('A', '2'), up('5'), all), 'D');
+  assert.equal(recommend(strategy, cards('A', '7'), up('2'), all), 'S');
+  assert.equal(recommend(strategy, cards('A', '7'), up('9'), all), 'H');
+  // D impossible -> tirer ; Ds impossible -> rester
+  assert.equal(recommend(strategy, cards('A', '2'), up('5'), { canDouble: false }), 'H');
+  assert.equal(recommend(strategy, cards('A', '7'), up('4'), { canDouble: false }), 'S');
+  // mains de 3 cartes : A,2,4 = 17 souple contre 6 -> D -> tirer ; A,2,5 = 18 souple -> Ds -> rester
+  assert.equal(recommend(strategy, cards('A', '2', '4'), up('6'), { canDouble: false }), 'H');
+  assert.equal(recommend(strategy, cards('A', '2', '5'), up('6'), { canDouble: false }), 'S');
+});
+
+test('stratégie : paires', () => {
+  assert.equal(recommend(strategy, cards('A', 'A'), up('10'), all), 'P');
+  assert.equal(recommend(strategy, cards('8', '8'), up('A'), all), 'P');
+  assert.equal(recommend(strategy, cards('K', 'Q'), up('6'), all), 'S'); // jamais séparer les 10
+  assert.equal(recommend(strategy, cards('5', '5'), up('9'), all), 'D'); // 5,5 = 10 dur
+  assert.equal(recommend(strategy, cards('9', '9'), up('7'), all), 'S');
+  // séparation impossible : 8,8 joué comme 16 dur, A,A comme 12 souple
+  assert.equal(recommend(strategy, cards('8', '8'), up('10'), { canDouble: true }), 'H');
+  assert.equal(recommend(strategy, cards('8', '8'), up('5'), { canDouble: true }), 'S');
+  assert.equal(recommend(strategy, cards('A', 'A'), up('6'), { canDouble: true }), 'H');
+});
