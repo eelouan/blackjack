@@ -135,6 +135,19 @@ body {
 }
 .shoe span:nth-child(1) { transform: translate(6px, 6px); }
 .shoe span:nth-child(2) { transform: translate(3px, 3px); }
+.shoe.shuffling span:nth-child(1) { animation: riffle-a .55s ease-in-out; }
+.shoe.shuffling span:nth-child(2) { animation: riffle-b .55s ease-in-out; }
+.shoe.shuffling span:nth-child(3) { animation: riffle-a .55s ease-in-out reverse; }
+@keyframes riffle-a {
+  0%, 100% { transform: translate(6px, 6px); }
+  30% { transform: translate(-22px, 4px) rotate(-12deg); }
+  60% { transform: translate(14px, 2px) rotate(8deg); }
+}
+@keyframes riffle-b {
+  0%, 100% { transform: translate(3px, 3px); }
+  30% { transform: translate(20px, 2px) rotate(10deg); }
+  60% { transform: translate(-14px, 4px) rotate(-8deg); }
+}
 
 /* ---- Effets de fin de manche ---- */
 .hand { position: relative; }
@@ -339,6 +352,10 @@ body {
 .money-form { margin-top: 16px; }
 .money-form label { display: block; font-size: .9rem; color: var(--muted); margin-bottom: 6px; }
 .money-form .row { justify-content: stretch; flex-wrap: nowrap; }
+.form-status { margin: 6px 0 0; font-size: .85rem; min-height: 1.2em; }
+.form-status:empty { display: none; }
+.form-status.ok { color: var(--pos); }
+.form-status.err { color: var(--neg); }
 .money-form input {
   flex: 1;
   min-width: 0;
@@ -374,13 +391,14 @@ body {
   .cards { min-height: 90px; }
   .hand { padding-right: 28px; }
   .shoe { width: 46px; height: 66px; top: 12px; right: 14px; }
+  .money-form input, .money-form .btn { min-height: 44px; font-size: 16px; } /* évite le zoom iOS */
 }
   </style>
 </head>
 <body>
   <header class="topbar">
     <h1>Blackjack</h1>
-    <p class="rules">Blackjack payé <strong>3 pour 2</strong> · Double après split · Le croupier reste sur 17 · Argent fictif</p>
+    <p class="rules">Blackjack payé <strong>3 pour 2</strong> · Double après split · Le croupier reste sur 17 · Sabot remélangé à chaque manche · Argent fictif</p>
   </header>
 
   <main class="layout">
@@ -435,21 +453,23 @@ body {
         <div><dt>Respect de la stratégie</dt><dd id="stat-strategy">—</dd></div>
       </dl>
 
-      <form id="deposit-form" class="money-form">
+      <form id="deposit-form" class="money-form" novalidate>
         <label for="deposit-input">Déposer</label>
         <div class="row">
-          <input id="deposit-input" type="number" min="1" step="1" value="100" inputmode="decimal">
+          <input id="deposit-input" type="text" value="100" inputmode="decimal" autocomplete="off" enterkeyhint="done">
           <button class="btn primary" type="submit">Déposer</button>
         </div>
+        <p id="deposit-status" class="form-status" role="status" aria-live="polite"></p>
       </form>
 
-      <form id="withdraw-form" class="money-form">
+      <form id="withdraw-form" class="money-form" novalidate>
         <label for="withdraw-input">Récupérer mes gains</label>
         <div class="row">
-          <input id="withdraw-input" type="number" min="1" step="1" placeholder="Montant" inputmode="decimal">
+          <input id="withdraw-input" type="text" placeholder="Montant" inputmode="decimal" autocomplete="off" enterkeyhint="done">
           <button class="btn" type="submit">Retirer</button>
         </div>
         <button id="btn-withdraw-all" class="btn ghost full" type="button">Tout récupérer</button>
+        <p id="withdraw-status" class="form-status" role="status" aria-live="polite"></p>
       </form>
 
       <h3>Historique</h3>
@@ -948,7 +968,7 @@ body {
  * Moteur de blackjack (sans interface).
  *
  * Règles :
- *  - Sabot de 6 jeux, remélangé quand il reste moins de 25 % des cartes.
+ *  - Sabot de 6 jeux, entièrement remélangé avant chaque manche.
  *  - Le croupier reste sur tous les 17 (y compris 17 souple).
  *  - Le croupier vérifie s'il a un blackjack quand sa carte visible est un As ou une figure/10.
  *  - Blackjack naturel payé 3 pour 2.
@@ -1012,6 +1032,8 @@ body {
     constructor(options = {}) {
       this.decks = options.decks || 6;
       this.rng = options.rng || Math.random;
+      // remélange complet du sabot avant chaque manche (désactivable pour les tests)
+      this.shuffleEachRound = options.shuffleEachRound !== false;
       this.balance = options.balance || 0;
       this.shoe = [];
       this.shoeSize = 0;
@@ -1062,7 +1084,7 @@ body {
       if (bet > this.balance) throw new Error('Solde insuffisant');
 
       this.reshuffled = false;
-      if (this.shoe.length < this.shoeSize * 0.25) this.reshuffle();
+      if (this.shuffleEachRound || this.shoe.length < this.shoeSize * 0.25) this.reshuffle();
 
       this.balance = roundMoney(this.balance - bet);
       this.hands = [this._newHand([], bet, false)];
@@ -1355,6 +1377,8 @@ body {
   const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const DEAL_STEP = REDUCED ? 0 : 300; // ms entre deux cartes
   const DEAL_TIME = REDUCED ? 0 : 420; // durée d'une carte
+  const SHUFFLE_TIME = REDUCED ? 0 : 550; // mélange du sabot avant la distribution
+  let dealOffset = 0; // délai avant la première carte du prochain rendu
 
   function cardEl(card, hidden, zone, index) {
     const el = document.createElement('div');
@@ -1451,6 +1475,16 @@ body {
     return animTime;
   }
 
+  // Petite animation de mélange du sabot ; les cartes partent ensuite.
+  function shuffleShoe() {
+    const shoe = $('shoe');
+    shoe.classList.remove('shuffling');
+    void shoe.offsetWidth;
+    shoe.classList.add('shuffling');
+    dealOffset = SHUFFLE_TIME;
+    setTimeout(() => shoe.classList.remove('shuffling'), SHUFFLE_TIME);
+  }
+
   // Lance l'animation des nouvelles cartes, dans l'ordre réel de distribution
   // (joueur, croupier, joueur, croupier…). Renvoie la durée totale en ms.
   function animateIncoming() {
@@ -1461,14 +1495,16 @@ body {
     incoming.sort((a, b) => (b.flip ? 1 : 0) - (a.flip ? 1 : 0));
 
     const shoeRect = $('shoe').getBoundingClientRect();
+    const base = dealOffset;
+    dealOffset = 0;
     incoming.forEach((c, i) => {
       const r = c.el.getBoundingClientRect();
       c.el.style.setProperty('--dx', shoeRect.left - r.left + 'px');
       c.el.style.setProperty('--dy', shoeRect.top - r.top + 'px');
-      c.el.style.animationDelay = i * DEAL_STEP + 'ms';
+      c.el.style.animationDelay = base + i * DEAL_STEP + 'ms';
       c.el.classList.add(c.flip ? 'flip' : 'deal-in');
     });
-    const total = (incoming.length - 1) * DEAL_STEP + DEAL_TIME;
+    const total = base + (incoming.length - 1) * DEAL_STEP + DEAL_TIME;
     incoming = [];
     if (!total) return 0;
 
@@ -1683,7 +1719,7 @@ body {
       resultsShown = false;
       strategyNote = '';
       shown = {}; // nouvelle manche : toutes les cartes sont distribuées depuis le sabot
-      if (game.reshuffled) message('Sabot remélangé.');
+      if (game.reshuffled) shuffleShoe();
       save();
       afterAction();
     } catch (err) {
@@ -1717,19 +1753,36 @@ body {
 
   $('deposit-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    if (busy) return;
-    const amount = round(Number($('deposit-input').value));
+    if (busy) {
+      formStatus('deposit-status', 'Patientez, les cartes sont en cours de distribution.', false);
+      return;
+    }
+    const amount = parseAmount($('deposit-input').value);
     try {
       game.deposit(amount);
       bank.deposited = round(bank.deposited + amount);
       addHistory('deposit', 'Dépôt', amount);
-      message(`${fmt(amount)} déposés. Placez votre mise.`);
+      if (game.phase !== 'player') message(`${fmt(amount)} déposés. Placez votre mise.`);
+      formStatus('deposit-status', `✓ ${fmt(amount)} déposés. Solde : ${fmt(game.balance)}`, true);
       save();
       render();
     } catch (err) {
-      message(err.message, 'lose');
+      formStatus('deposit-status', 'Montant invalide : entrez un nombre, par exemple 100 ou 12,50.', false);
     }
   });
+
+  // Lit un montant saisi au format français : « 12,5 », « 1 000 », « 20 € »…
+  function parseAmount(text) {
+    const clean = String(text).replace(/[\s\u00a0\u202f€]/g, '').replace(',', '.');
+    if (!/^\d+(\.\d{0,2})?$/.test(clean)) return NaN;
+    return round(Number(clean));
+  }
+
+  function formStatus(id, text, ok) {
+    const el = $(id);
+    el.textContent = text;
+    el.className = 'form-status ' + (ok ? 'ok' : 'err');
+  }
 
   function withdraw(amount) {
     try {
@@ -1739,22 +1792,23 @@ body {
       if (bet > game.balance) bet = 0;
       const profit = round(game.balance + bank.withdrawn - bank.deposited);
       message(`Vous avez récupéré ${fmt(amount)}. Bénéfice total : ${signed(profit)}`, profit >= 0 ? 'win' : 'lose');
+      formStatus('withdraw-status', `✓ ${fmt(amount)} récupérés. Bénéfice total : ${signed(profit)}`, true);
       $('withdraw-input').value = '';
       save();
       render();
     } catch (err) {
-      message(err.message, 'lose');
+      formStatus('withdraw-status', err.message === 'Montant invalide' ? 'Montant invalide : entrez un nombre, par exemple 50 ou 12,50.' : err.message, false);
     }
   }
 
   $('withdraw-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    withdraw(round(Number($('withdraw-input').value)));
+    withdraw(parseAmount($('withdraw-input').value));
   });
 
   $('btn-withdraw-all').addEventListener('click', () => {
     if (game.balance > 0) withdraw(game.balance);
-    else message('Rien à récupérer.', 'lose');
+    else formStatus('withdraw-status', 'Rien à récupérer : votre solde est à 0 €.', false);
   });
 
   $('btn-reset').addEventListener('click', () => {

@@ -13,7 +13,7 @@ const { BlackjackGame, handValue } = sandbox.Blackjack;
 // Prépare un sabot truqué : les cartes sont tirées dans l'ordre donné.
 // Ordre de distribution : joueur, croupier, joueur, croupier, puis tirages.
 function rigged(ranks, balance = 1000) {
-  const g = new BlackjackGame({ balance });
+  const g = new BlackjackGame({ balance, shuffleEachRound: false });
   g.shoe = ranks.map((rank) => ({ rank, suit: '♠' })).reverse();
   g.shoeSize = 0; // empêche le remélange automatique
   return g;
@@ -140,6 +140,18 @@ test('split d’As : une carte chacun, pas de double', () => {
   assert.equal(g.hands[0].cards.length, 2);
   assert.equal(g.hands[1].cards.length, 2);
   assert.deepEqual(g.hands.map((h) => h.result), ['lose', 'win']);
+});
+
+test('le sabot est entièrement remélangé avant chaque manche', () => {
+  const g = new BlackjackGame({ balance: 1000 });
+  for (let i = 0; i < 5; i++) {
+    if (g.phase === 'player') g.stand();
+    g.deal(10);
+    assert.ok(g.reshuffled);
+    // 6 jeux = 312 cartes, moins les cartes déjà tirées pendant cette manche
+    const drawn = g.dealer.length + g.hands.reduce((n, h) => n + h.cards.length, 0);
+    assert.equal(g.shoe.length, 312 - drawn);
+  }
 });
 
 test('dépôt, mise et retrait', () => {

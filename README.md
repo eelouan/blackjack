@@ -4,7 +4,7 @@ Jeu de blackjack dans le navigateur, sans dépendance. Tout tient dans un seul f
 
 ## Règles
 
-- Sabot de 6 jeux, remélangé quand il reste moins de 25 % des cartes.
+- Sabot de 6 jeux, **entièrement remélangé avant chaque manche** (le comptage de cartes ne sert à rien).
 - **Blackjack naturel payé 3 pour 2** (mise de 10 € → 15 € de gain).
 - Victoire normale payée 1 pour 1, égalité = mise rendue.
 - Le croupier tire jusqu'à 16 et reste sur tous les 17 (y compris 17 souple).
@@ -15,7 +15,7 @@ Jeu de blackjack dans le navigateur, sans dépendance. Tout tient dans un seul f
 
 ## Argent
 
-- **Déposer** : ajoute de l'argent fictif à votre solde.
+- **Déposer** : ajoute de l'argent fictif à votre solde (montants entiers ou avec centimes : « 50 », « 12,50 »).
 - **Récupérer mes gains** : retire un montant (ou tout le solde) entre deux manches.
 - Le **bénéfice de chaque manche** est affiché à la fin de la manche, et le **bénéfice total**
   (solde + récupéré − déposé) est toujours visible dans la banque, avec l'historique des opérations.
